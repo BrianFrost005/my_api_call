@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Animals</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+<body>
+    <div class="main">
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/animals.html">My Animals</a></li>
+                    <li><a href="/logout.html">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <div id="welcome">
+            <p id="welcomeMessage" class="welcome-message"></p>
+        </div>
+
+        <div id="animalList" class="animal-list"></div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+        
+        if (!token || !username) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/myanimals?username=${username}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch animals');
+            }
+
+            const animals = await response.json();
+            displayAnimals(animals);
+        } catch (error) {
+            console.error('Error fetching animals:', error);
+            Toastify({
+                text: "Failed to fetch animals.",
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "#FF0000",
+                close: true
+            }).showToast();
+        }
+
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        welcomeMessage.textContent = `Welcome, ${username}!`;
+    });
+
+    function displayAnimals(animals) {
+        const animalListDiv = document.getElementById('animalList');
+        animalListDiv.innerHTML = '';
+
+        animals.forEach(animal => {
+            const animalDiv = document.createElement('div');
+            animalDiv.classList.add('animal-entry');
+
+            animalDiv.innerHTML = `
+                <div>
+                    <ul>
+                        <li><strong>Name:</strong> ${animal.name}</li>
+                        <li><strong>Scientific Name:</strong> ${animal.scientificName}</li>
+                        <li><strong>Class:</strong> ${animal.class}</li>
+                        <li><strong>Order:</strong> ${animal.order}</li>
+                        <li><strong>Location:</strong> ${animal.location}</li>
+                        <li><strong>Diet:</strong> ${animal.diet}</li>
+                        <li><strong>Color:</strong> ${animal.color}</li>
+                        <li><strong>Temperament:</strong> ${animal.temperament}</li>
+                        <li><strong>Lifespan:</strong> ${animal.lifespan}</li>
+                    </ul>
+                    <button class="remove-btn" data-animal-id="${animal._id}">Remove</button>
+                </div>
+            `;
+
+            const removeBtn = animalDiv.querySelector('.remove-btn');
+            removeBtn.addEventListener('click', async () => {
+                const confirmDelete = confirm(`Are you sure you want to remove ${animal.name}?`);
+                if (confirmDelete) {
+                    try {
+                        const token = localStorage.getItem('token'); // Ensure token is accessible here
+                        const response = await fetch(`/api/remove/${animal._id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            Toastify({
+                                text: "Animal removed successfully!",
+                                duration: 3000,
+                                gravity: "top",
+                                position: "right",
+                                backgroundColor: "#4CAF50",
+                                close: true
+                            }).showToast();
+
+                            // Remove the animal from the UI
+                            animalDiv.remove();
+                        } else {
+                            throw new Error('Failed to remove animal');
+                        }
+                    } catch (error) {
+                        console.error('Error removing animal:', error);
+                        Toastify({
+                            text: "Failed to remove animal.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#FF0000",
+                            close: true
+                        }).showToast();
+                    }
+                }
+            });
+
+            animalListDiv.appendChild(animalDiv);
+        });
+    }
+    </script>
+</body>
+</html>

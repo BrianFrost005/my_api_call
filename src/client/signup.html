@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="main">
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li><a href="/signup.html">Sign Up</a></li>
+                    <li><a href="/login.html">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+        <form id="signupForm">
+            <input type="text" id="username" placeholder="Username" required />
+            <input type="password" id="password" placeholder="Password" required />
+            <button type="submit">Sign Up</button>
+        </form>
+        <div id="signupResult"></div>
+    </div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/user/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                const signupResult = document.getElementById('signupResult');
+                if (response.ok) {
+                    signupResult.textContent = 'Sign-up successful!';
+                    signupResult.style.color = 'green';
+                } else {
+                    signupResult.textContent = 'Sign-up failed: ' + data.error;
+                    signupResult.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

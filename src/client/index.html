@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <title>Client Home Page</title>
+</head>
+<body>
+    <div class="main">
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/animals.html">My Animals</a></li>
+                    <li><a href="/logout.html">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <div id="welcome">
+            <p id="welcomeText"></p>
+        </div>
+
+        <form id="searchForm">
+            <input type="text" id="input" value="fox" />
+            <button id="post">POST</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        // Authentication
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            if (!token) {
+                window.location.href = '/login.html';
+            } else {
+                // Display welcome message with the username
+                document.getElementById('welcomeText').textContent = `Welcome, ${username}!`;
+            }
+        });
+
+        document.getElementById('searchForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            
+            console.log("Form submitted");
+
+            const inputValue = document.getElementById('input').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // Clear existing content
+
+            try {
+                const response = await fetch(`/api/search?name=${inputValue}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                const data = await response.json();
+                console.log("Data fetched", data);
+
+                data.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.innerHTML = `
+                        <div>
+                            <ul>
+                                <li><strong>Name:</strong> ${item.name}</li>
+                                <li><strong>Scientific Name:</strong> ${item.taxonomy.scientific_name}</li>
+                                <li><strong>Class:</strong> ${item.taxonomy.class}</li>
+                                <li><strong>Order:</strong> ${item.taxonomy.order}</li>
+                                <li><strong>Location:</strong> ${item.locations.join(', ')}</li>
+                                <li><strong>Diet:</strong> ${item.characteristics.diet}</li>
+                                <li><strong>Color:</strong> ${item.characteristics.color}</li>
+                                <li><strong>Temperament:</strong> ${item.characteristics.temperament}</li>
+                                <li><strong>Lifespan:</strong> ${item.characteristics.lifespan}</li>
+                            </ul>
+                            <button class="save-btn">Save Data</button>
+                        </div>
+                    `;
+
+                    const saveBtn = itemDiv.querySelector('.save-btn');
+                    saveBtn.addEventListener('click', async function () {
+                        console.log("Save button clicked");
+
+                        const username = localStorage.getItem('username');
+                        const data = {
+                            name: item.name,
+                            scientificName: item.taxonomy.scientific_name,
+                            classType: item.taxonomy.class,
+                            order: item.taxonomy.order,
+                            location: item.locations.join(', '),
+                            diet: item.characteristics.diet,
+                            color: item.characteristics.color,
+                            temperament: item.characteristics.temperament,
+                            lifespan: item.characteristics.lifespan,
+                            username: username // Include the username in the data
+                        };
+
+                        try {
+                            const saveResponse = await fetch('/api/save', {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                },
+                                body: JSON.stringify(data)
+                            });
+
+                            if (saveResponse.ok) {
+                                console.log('Data saved successfully!');
+                                Toastify({
+                                    text: "Data saved successfully!",
+                                    duration: 3000,
+                                    gravity: "top",
+                                    position: "right",
+                                    backgroundColor: "#4CAF50",
+                                    close: true
+                                }).showToast();
+                            } else {
+                                console.error('Failed to save data.');
+                                Toastify({
+                                    text: "Failed to save data.",
+                                    duration: 3000,
+                                    gravity: "top",
+                                    position: "right",
+                                    backgroundColor: "#FF0000",
+                                    close: true
+                                }).showToast();
+                            }
+                        } catch (error) {
+                            console.error('Error saving data:', error);
+                            Toastify({
+                                text: "Error saving data.",
+                                duration: 3000,
+                                gravity: "top",
+                                position: "right",
+                                backgroundColor: "#FF0000",
+                                close: true
+                            }).showToast();
+                        }
+                    });
+
+                    resultDiv.appendChild(itemDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="main">
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li><a href="/signup.html">Sign Up</a></li>
+                    <li><a href="/login.html">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required />
+            <input type="password" id="password" placeholder="Password" required />
+            <button type="submit">Login</button>
+        </form>
+        <div id="loginResult"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                const loginResult = document.getElementById('loginResult');
+                if (response.ok) {
+                    localStorage.setItem('token', data.token); // Store the token
+                    localStorage.setItem('username', data.username); // Store the username
+                    window.location.href = data.redirectTo; // Redirect to index.html
+                } else {
+                    loginResult.textContent = 'Login failed: ' + data.error;
+                    loginResult.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
